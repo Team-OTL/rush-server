@@ -13,6 +13,8 @@ Spring Cloud Gateway. 외부 요청을 받는 유일한 입구이며, JWT 검증
 | `/live/**` | rush-live (Go, WebSocket) |
 | `/chat/**` | rush-chat (Go, WebSocket) |
 
+WebSocket을 제외한 라우트는 서킷브레이커를 거칩니다. 서비스에 연결할 수 없거나 5초 안에 응답이 없으면 `/fallback`이 `503`을 돌려줍니다.
+
 ## 실행
 
 ```bash
