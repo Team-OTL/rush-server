@@ -64,6 +64,15 @@ jobs:
           if ! gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --add-assignee "$PR_AUTHOR"; then
             echo "::warning::PR assignee setup failed; continuing CI."
           fi
+      - name: Request Default Reviewer
+        if: github.event.action != 'synchronize' && github.event.pull_request.user.login != 'cfcromn'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if ! gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --add-reviewer cfcromn; then
+            echo "::warning::PR reviewer setup failed; continuing CI."
+          fi
 
   detect-changes:
     name: Select CI Targets
