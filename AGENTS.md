@@ -1,6 +1,6 @@
 # rush-server
 
-A backend monorepo where each module uses its own stack. See each `rush-*/README.md` and `docker-compose.yml` for module roles, ports, and how to run them.
+Backend services for rush. Each module uses its own stack. See each `rush-*/README.md` and `docker-compose.yml` for module roles, ports, and how to run them.
 
 - Spring Boot + Kotlin: `rush-gateway`, `rush-config`, `rush-eureka`, `rush-auth`, `rush-shop`, `rush-minigame`, `rush-stage`
 - NestJS: `rush-user`, `rush-sp`
