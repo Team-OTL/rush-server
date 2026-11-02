@@ -68,12 +68,20 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 
 - From `develop` to `main`, labeled `🌏 Deploy`.
 - Title: `vYYYYMMDD.n` — today's date in Asia/Seoul, then the next sequence after that date's existing tags, starting at `0`.
-- Body: only a 개요 section with one sentence summarizing what the release brings, written from the included PRs. Do not use a fixed phrase that only lists PR numbers or says they are merged into `main`.
+- Body: exactly this, nothing more.
+  - 개요: `#{first} ~ #{last} 사이의 변경사항을 상용환경에 반영합니다.`, using the lowest and highest included PR numbers. For a single PR: `#{N}의 변경사항을 상용환경에 반영합니다.`
+  - 본문: each included PR as `- #N PR 제목`, in number order.
 
   ```markdown
   ## 개요
 
-  모듈별 CI와 develop 기반 릴리즈 흐름을 도입합니다.
+  #2 ~ #7 사이의 변경사항을 상용환경에 반영합니다.
+
+  ## 본문
+
+  - #2 [ci/cd] 모듈별 CI 워크플로우 추가
+  - #6 [global] main 변경사항 develop 반영
+  - #7 [ci/cd] develop에서 main으로 가는 릴리즈 흐름 추가
   ```
 
 - Do not create tags. After the merge, `.github/workflows/rush-release.yml` creates the tag and the GitHub Release.
