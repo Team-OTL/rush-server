@@ -8,7 +8,7 @@
 
 ## 모듈 경계
 
-- 변경은 해당 모듈 안에서 끝냅니다. 모듈끼리 소스 코드를 공유하지 않습니다.
+- 서비스끼리 서로의 코드를 직접 import하지 않습니다. 다른 서비스의 데이터는 그 서비스의 API로 받습니다.
 - Spring 모듈의 공통 빌드 설정은 `build-logic/` convention 플러그인에, 의존성 버전은 `gradle/libs.versions.toml`에만 둡니다. 모듈 `build.gradle.kts`에 버전을 직접 쓰지 않습니다.
 - 각 서비스는 게이트웨이 경로와 같은 prefix(`/auth`, `/user`, `/chat` 등)로 API를 노출합니다.
 
