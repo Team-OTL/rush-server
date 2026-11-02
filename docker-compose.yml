@@ -1,0 +1,90 @@
+# 전체 실행: docker compose up --build
+# 빌드 컨텍스트는 모두 저장소 루트(.)입니다.
+services:
+  rush-config:
+    build: { context: ., dockerfile: rush-config/Dockerfile }
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8888/actuator/health"]
+      interval: 5s
+      retries: 30
+
+  rush-eureka:
+    build: { context: ., dockerfile: rush-eureka/Dockerfile }
+    ports: ["8761:8761"]   # 대시보드 확인용
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://localhost:8761/actuator/health"]
+      interval: 5s
+      retries: 30
+
+  rush-auth:
+    build: { context: ., dockerfile: rush-auth/Dockerfile }
+    environment:
+      CONFIG_URL: http://rush-config:8888
+      EUREKA_URL: http://rush-eureka:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      rush-config: { condition: service_healthy }
+      rush-eureka: { condition: service_healthy }
+
+  rush-shop:
+    build: { context: ., dockerfile: rush-shop/Dockerfile }
+    environment:
+      CONFIG_URL: http://rush-config:8888
+      EUREKA_URL: http://rush-eureka:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      rush-config: { condition: service_healthy }
+      rush-eureka: { condition: service_healthy }
+
+  rush-minigame:
+    build: { context: ., dockerfile: rush-minigame/Dockerfile }
+    environment:
+      CONFIG_URL: http://rush-config:8888
+      EUREKA_URL: http://rush-eureka:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      rush-config: { condition: service_healthy }
+      rush-eureka: { condition: service_healthy }
+
+  rush-stage:
+    build: { context: ., dockerfile: rush-stage/Dockerfile }
+    environment:
+      CONFIG_URL: http://rush-config:8888
+      EUREKA_URL: http://rush-eureka:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      rush-config: { condition: service_healthy }
+      rush-eureka: { condition: service_healthy }
+
+  rush-user:
+    build: { context: ., dockerfile: rush-user/Dockerfile }
+
+  rush-sp:
+    build: { context: ., dockerfile: rush-sp/Dockerfile }
+
+  rush-live:
+    build: { context: ., dockerfile: rush-live/Dockerfile }
+
+  rush-chat:
+    build: { context: ., dockerfile: rush-chat/Dockerfile }
+
+  rush-gateway:
+    build: { context: ., dockerfile: rush-gateway/Dockerfile }
+    environment:
+      CONFIG_URL: http://rush-config:8888
+      EUREKA_URL: http://rush-eureka:8761/eureka
+      JWT_SECRET: ${JWT_SECRET}
+      USER_URL: http://rush-user:8085
+      SP_URL: http://rush-sp:8086
+      LIVE_URL: ws://rush-live:8087
+      CHAT_URL: ws://rush-chat:8088
+    ports: ["8080:8080"]   # 외부에 열리는 유일한 포트
+    depends_on:
+      rush-config: { condition: service_healthy }
+      rush-eureka: { condition: service_healthy }
+      rush-user: { condition: service_started }
+      rush-sp: { condition: service_started }
+      rush-live: { condition: service_started }
+      rush-chat: { condition: service_started }

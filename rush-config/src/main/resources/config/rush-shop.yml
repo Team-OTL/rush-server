@@ -1,0 +1,3 @@
+# rush-shop 전용 설정
+server:
+  port: 8082

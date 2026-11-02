@@ -1,0 +1,48 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: rush-gateway
+  config:
+    import: optional:configserver:${CONFIG_URL:http://localhost:8888}
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            # ---- Spring 서비스: Eureka에서 찾아갑니다 (lb://서비스이름) ----
+            - id: rush-auth
+              uri: lb://rush-auth
+              predicates: [Path=/auth/**]
+            - id: rush-shop
+              uri: lb://rush-shop
+              predicates: [Path=/shop/**]
+            - id: rush-minigame
+              uri: lb://rush-minigame
+              predicates: [Path=/minigame/**]
+            - id: rush-stage
+              uri: lb://rush-stage
+              predicates: [Path=/stage/**]
+
+            # ---- NestJS 서비스: 주소로 바로 연결 ----
+            - id: rush-user
+              uri: ${USER_URL:http://localhost:8085}
+              predicates: [Path=/user/**]
+            - id: rush-sp
+              uri: ${SP_URL:http://localhost:8086}
+              predicates: [Path=/sp/**]
+
+            # ---- Go 실시간 서비스: WebSocket ----
+            - id: rush-live
+              uri: ${LIVE_URL:ws://localhost:8087}
+              predicates: [Path=/live/**]
+            - id: rush-chat
+              uri: ${CHAT_URL:ws://localhost:8088}
+              predicates: [Path=/chat/**]
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway

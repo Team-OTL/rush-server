@@ -1,0 +1,20 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: rush-config
+  profiles:
+    # native: Git 저장소 대신 로컬 파일에서 설정을 읽습니다.
+    active: native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: ${CONFIG_SEARCH_LOCATIONS:classpath:/config}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info

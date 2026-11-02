@@ -1,0 +1,3 @@
+# rush-gateway 전용 설정 (라우팅은 rush-gateway/application.yml 참고)
+server:
+  port: 8080

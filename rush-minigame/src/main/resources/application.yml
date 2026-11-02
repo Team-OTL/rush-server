@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: rush-minigame
+  config:
+    # 설정은 rush-config에서 받아옵니다. (config 서버가 없어도 optional이라 뜨긴 함)
+    import: optional:configserver:${CONFIG_URL:http://localhost:8888}
+
+server:
+  port: 8083
