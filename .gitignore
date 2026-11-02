@@ -31,6 +31,9 @@ coverage/
 ### Go ###
 bin/
 
+### Python ###
+__pycache__/
+
 ### Env ###
 .env
 .DS_Store
