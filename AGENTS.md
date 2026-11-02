@@ -59,11 +59,26 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 
 - Every PR except a release PR targets `develop`.
 - Titles use the `[scope] title` format. Pick scopes from `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd`, separating multiple scopes with commas. Do not use a colon (`:`) in the title.
-- Bodies follow the overview (개요) and body (본문) sections of `.github/PULL_REQUEST_TEMPLATE.md`.
+- Bodies use the 개요 and 본문 sections of `.github/PULL_REQUEST_TEMPLATE.md` and stay short:
+  - 개요: one sentence on what changes.
+  - 본문: up to five one-line bullets on what changed. Add a merge-order or follow-up note only when one exists.
+  - Leave out verification logs, file-by-file descriptions, and background the diff already shows.
 
 ## Release PRs
 
-- Open from `develop` to `main` with the title `vYYYYMMDD.n`: today's date in Asia/Seoul and the next sequence after that date's existing tags, starting at `0`.
-- Label it `🌏 Deploy`.
-- Body: under 개요, one sentence naming the included range, such as `#6 ~ #8의 변경사항을 main에 반영합니다.`; under 본문, list each included PR as `- #N PR 제목`.
-- Do not create tags yourself. After the merge, `.github/workflows/rush-release.yml` creates the tag and the GitHub Release.
+- From `develop` to `main`, labeled `🌏 Deploy`.
+- Title: `vYYYYMMDD.n` — today's date in Asia/Seoul, then the next sequence after that date's existing tags, starting at `0`.
+- Body: exactly this, nothing more.
+
+  ```markdown
+  ## 개요
+
+  #6 ~ #7 변경사항 반영
+
+  ## 본문
+
+  - #6 [global] main 변경사항 develop 반영
+  - #7 [ci/cd] develop에서 main으로 가는 릴리즈 흐름 추가
+  ```
+
+- Do not create tags. After the merge, `.github/workflows/rush-release.yml` creates the tag and the GitHub Release.
