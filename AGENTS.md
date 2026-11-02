@@ -39,6 +39,12 @@ CI(`.github/workflows/rush-ci.yml`)와 같은 명령입니다. 변경한 모듈�
 3. `rush-gateway`의 `application.yml`에 라우트를, `docker-compose.yml`에 서비스를 추가합니다.
 4. PR 제목 검사의 scope 목록(`rush-ci.yml`)에 `xxx`를 추가합니다.
 
+## 브랜치
+
+- `main`에 직접 커밋하지 않습니다. 원격 `main`에서 새 브랜치를 만들어 작업하고 PR로 머지합니다.
+- 이름은 `<type>/<kebab-case-설명>` 형식이고, type은 커밋 type과 같습니다. 예: `feat/gateway-fallback`, `fix/jwt-public-path`, `docs/agents-md`
+- 브랜치 하나에는 작업 하나만 담습니다. 이미 머지된 브랜치는 다시 쓰지 않습니다.
+
 ## PR
 
 - 제목은 `[scope] 제목` 형식입니다. scope는 `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd` 중에서 고르고, 여러 개면 쉼표로 구분합니다. 제목에 콜론(`:`)을 쓰지 않습니다.
