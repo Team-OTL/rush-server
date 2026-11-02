@@ -15,6 +15,9 @@ describe('AppController', () => {
   });
 
   it('ping', () => {
-    expect(appController.ping()).toEqual({ service: 'rush-user', status: 'ok' });
+    expect(appController.ping()).toEqual({
+      service: 'rush-user',
+      status: 'ok',
+    });
   });
 });

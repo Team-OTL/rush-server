@@ -44,7 +44,12 @@ class JwtAuthenticationFilter(
 
         val userId =
             runCatching {
-                Jwts.parser().verifyWith(key).build().parseSignedClaims(token).payload.subject
+                Jwts
+                    .parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .payload.subject
             }.getOrNull() ?: return unauthorized(exchange)
 
         val authed = sanitized.mutate().header(USER_ID_HEADER, userId).build()
