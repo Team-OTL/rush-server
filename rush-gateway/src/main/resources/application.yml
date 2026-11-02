@@ -10,6 +10,8 @@ spring:
     gateway:
       server:
         webflux:
+          httpclient:
+            connect-timeout: 3000
           routes:
             # ---- Spring 서비스: Eureka에서 찾아갑니다 (lb://서비스이름) ----
             - id: rush-auth

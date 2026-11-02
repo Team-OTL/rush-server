@@ -15,6 +15,7 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.time.Duration
+import java.util.concurrent.Executors
 
 private const val SECRET = "test-secret-key-for-gateway-fallback-test-0123456789"
 
@@ -24,6 +25,7 @@ private const val SECRET = "test-secret-key-for-gateway-fallback-test-0123456789
         "spring.cloud.config.enabled=false",
         "eureka.client.enabled=false",
         "jwt.secret=$SECRET",
+        "resilience4j.timelimiter.configs.default.timeout-duration=3s",
     ],
 )
 @AutoConfigureWebTestClient(timeout = "10s")
@@ -59,6 +61,20 @@ class FallbackTest {
     }
 
     @Test
+    fun `타임아웃을 넘기면 504 fallback 응답을 준다`() {
+        client
+            .get()
+            .uri("/user/very-slow")
+            .header("Authorization", "Bearer ${token()}")
+            .exchange()
+            .expectStatus()
+            .isEqualTo(HttpStatus.GATEWAY_TIMEOUT)
+            .expectBody()
+            .jsonPath("$.code")
+            .isEqualTo("GATEWAY_TIMEOUT")
+    }
+
+    @Test
     fun `타임아웃보다 빠른 느린 응답은 그대로 전달한다`() {
         client
             .get()
@@ -74,8 +90,10 @@ class FallbackTest {
     companion object {
         private val slowServer =
             HttpServer.create(InetSocketAddress("localhost", 0), 0).apply {
+                executor = Executors.newCachedThreadPool()
                 createContext("/") { exchange ->
-                    Thread.sleep(Duration.ofSeconds(2))
+                    val delay = if (exchange.requestURI.path.endsWith("very-slow")) 4L else 2L
+                    Thread.sleep(Duration.ofSeconds(delay))
                     val body = "slow-ok".toByteArray()
                     exchange.sendResponseHeaders(200, body.size.toLong())
                     exchange.responseBody.use { it.write(body) }
