@@ -39,6 +39,13 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 3. Add a route to `application.yml` in `rush-gateway` and a service to `docker-compose.yml`.
 4. Add `xxx` to the PR title scope list in `rush-ci.yml`.
 
+## Commits
+
+- Format: `type(scope): description`. Use the same scopes as PR titles; the description is Korean, ends in a noun form, and has no trailing period. Example: `feat(gateway): 서비스 장애 시 fallback 응답 추가`
+- Keep one logical change per commit. Stage files by name; never use `git add -A` or `git add .`.
+- Never add AI attribution: no `Co-Authored-By` trailer for an AI and no "Generated with" line in commits or PR bodies.
+- See `.agents/shared/commit-conventions.md` for choosing the type and scope. Where it differs, this file wins.
+
 ## Branches
 
 - Never commit directly to `main`. Branch off the remote `main`, work there, and merge through a PR.
