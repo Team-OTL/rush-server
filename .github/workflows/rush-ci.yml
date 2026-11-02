@@ -1,0 +1,252 @@
+name: Rush CI Workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate-title:
+    name: Validate PR Title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate PR Title
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const title = context.payload.pull_request.title;
+            const allowedScopes = [
+              'global', 'gateway', 'config', 'eureka', 'auth', 'shop', 'minigame',
+              'stage', 'user', 'sp', 'live', 'chat', 'ci/cd'
+            ];
+
+            const match = title.match(/^\[([^\]]+)\]\s+(.+)$/);
+            if (!match) {
+              core.setFailed('Invalid title format. Use [scope] title');
+              return;
+            }
+
+            const [, scopesPart, titlePart] = match;
+            if (titlePart.includes(':')) {
+              core.setFailed('Colon (:) is not allowed in the title');
+              return;
+            }
+
+            const invalidScopes = scopesPart.split(',').map(s => s.trim())
+              .filter(scope => !allowedScopes.includes(scope));
+            if (invalidScopes.length > 0) {
+              core.setFailed(`Invalid scope(s): ${invalidScopes.join(', ')}`);
+            }
+
+  setup-pr-metadata:
+    name: Set Up PR Metadata
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Assign PR Author
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          if ! gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --add-assignee "$PR_AUTHOR"; then
+            echo "::warning::PR assignee setup failed; continuing CI."
+          fi
+      - name: Request Default Reviewer
+        if: github.event.action != 'synchronize' && github.event.pull_request.user.login != 'cfcromn'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if ! gh pr edit "$PR_NUMBER" --repo "${{ github.repository }}" --add-reviewer cfcromn; then
+            echo "::warning::PR reviewer setup failed; continuing CI."
+          fi
+
+  detect-changes:
+    name: Select CI Targets
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      services-list: ${{ steps.select.outputs.services-list }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Select Changed Modules
+        id: select
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: python3 .github/scripts/select-targets.py --base "$BASE_SHA" --head "$GITHUB_SHA"
+
+  verify:
+    name: Verify (${{ matrix.service }})
+    needs: detect-changes
+    if: needs.detect-changes.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Set Up Java
+        if: matrix.stack == 'kotlin'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set Up Gradle
+        if: matrix.stack == 'kotlin'
+        uses: gradle/actions/setup-gradle@v6
+      - name: Lint, Test And Build
+        if: matrix.stack == 'kotlin'
+        run: ./gradlew ":${{ matrix.service }}:build"
+
+      - name: Set Up Node
+        if: matrix.stack == 'nest'
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ${{ matrix.service }}/package-lock.json
+      - name: Lint, Test And Build
+        if: matrix.stack == 'nest'
+        working-directory: ${{ matrix.service }}
+        run: |
+          npm ci
+          npx eslint "{src,test}/**/*.ts"
+          npm run build
+          npm test -- --ci
+          npm run test:e2e -- --ci
+
+      - name: Set Up Go
+        if: matrix.stack == 'go'
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: ${{ matrix.service }}/go.mod
+          cache-dependency-path: ${{ matrix.service }}/go.sum
+      - name: Lint, Test And Build
+        if: matrix.stack == 'go'
+        working-directory: ${{ matrix.service }}
+        run: |
+          go mod tidy -diff
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::gofmt required for: $unformatted"
+            exit 1
+          fi
+          go vet ./...
+          go test -race ./...
+          go build ./...
+
+  image-build:
+    name: Image (${{ matrix.service }})
+    needs: detect-changes
+    if: needs.detect-changes.outputs.matrix != '{"include":[]}'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build Image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64
+          push: false
+          provenance: false
+          tags: ${{ matrix.service }}:ci
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: ${{ github.event_name == 'push' && format('type=gha,mode=max,scope={0}', matrix.service) || '' }}
+
+  ci-result:
+    name: CI Result
+    needs: [detect-changes, verify, image-build]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require All Selected Jobs
+        env:
+          DETECT_RESULT: ${{ needs.detect-changes.result }}
+          VERIFY_RESULT: ${{ needs.verify.result }}
+          IMAGE_RESULT: ${{ needs.image-build.result }}
+          MATRIX: ${{ needs.detect-changes.outputs.matrix }}
+        run: |
+          test "$DETECT_RESULT" = success
+          expected=success
+          if [ "$MATRIX" = '{"include":[]}' ]; then expected=skipped; fi
+          test "$VERIFY_RESULT" = "$expected"
+          test "$IMAGE_RESULT" = "$expected"
+
+
+  notify:
+    name: Send CI Notification
+    needs: [validate-title, setup-pr-metadata, detect-changes, verify, image-build, ci-result]
+    if: always()
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_CI_WEBHOOK }}
+      RESULT_LABELS: '{"success":"성공","failure":"실패","cancelled":"취소됨","skipped":"건너뜀"}'
+    steps:
+      - name: Determine Status
+        if: env.DISCORD_WEBHOOK != ''
+        id: status
+        env:
+          RESULTS: "${{ needs.validate-title.result }} ${{ needs.setup-pr-metadata.result }} ${{ needs.ci-result.result }}"
+        run: |
+          status=success
+          color=0x4CAF50
+          for res in $RESULTS; do
+            if [ "$res" = failure ]; then
+              status=failure
+              color=0xFF4C4C
+              break
+            elif [ "$res" = cancelled ]; then
+              status=cancelled
+              color=0xFFA500
+            fi
+          done
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "color=$color" >> "$GITHUB_OUTPUT"
+          echo "short-sha=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Send Discord Notification
+        if: env.DISCORD_WEBHOOK != ''
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ env.DISCORD_WEBHOOK }}
+          status: ${{ steps.status.outputs.status }}
+          color: ${{ steps.status.outputs.color }}
+          nodetail: true
+          url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          title: "[${{ fromJSON(env.RESULT_LABELS)[steps.status.outputs.status] || '확인 불가' }}] rush CI"
+          description: |
+            **저장소:** ${{ github.repository }}
+            `${{ github.head_ref || github.ref_name }}` · `${{ steps.status.outputs.short-sha }}` · 실행자 **${{ github.actor }}**
+            **변경 대상:** ${{ needs.detect-changes.outputs.services-list }}
+            ─────────────────────────────
+            **PR 제목 검사:** ${{ fromJSON(env.RESULT_LABELS)[needs.validate-title.result] || '확인 불가' }}
+            **변경 사항 확인:** ${{ fromJSON(env.RESULT_LABELS)[needs.detect-changes.result] || '확인 불가' }}
+            **빌드 및 테스트:** ${{ fromJSON(env.RESULT_LABELS)[needs.verify.result] || '확인 불가' }}
+            **이미지 빌드:** ${{ fromJSON(env.RESULT_LABELS)[needs.image-build.result] || '확인 불가' }}
