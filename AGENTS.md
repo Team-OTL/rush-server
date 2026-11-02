@@ -49,11 +49,21 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 
 ## Branches
 
-- Never commit directly to `main`. Branch off the remote `main`, work there, and merge through a PR.
+- Never commit directly to `develop` or `main`. Branch off the remote `develop`, work there, and merge back into `develop` through a PR.
+- `main` only receives release PRs from `develop`.
 - Name branches `<type>/<kebab-case-description>`, using the same type as the commit. Examples: `feat/gateway-fallback`, `fix/jwt-public-path`, `docs/agents-md`
 - Keep one piece of work per branch. Do not reuse a branch that has already been merged.
+- Never rename the branch of an open PR. GitHub closes the PR.
 
 ## Pull Requests
 
+- Every PR except a release PR targets `develop`.
 - Titles use the `[scope] title` format. Pick scopes from `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd`, separating multiple scopes with commas. Do not use a colon (`:`) in the title.
 - Bodies follow the overview (개요) and body (본문) sections of `.github/PULL_REQUEST_TEMPLATE.md`.
+
+## Release PRs
+
+- Open from `develop` to `main` with the title `vYYYYMMDD.n`: today's date in Asia/Seoul and the next sequence after that date's existing tags, starting at `0`.
+- Label it `🌏 Deploy`.
+- Body: under 개요, one sentence naming the included range, such as `#6 ~ #8의 변경사항을 main에 반영합니다.`; under 본문, list each included PR as `- #N PR 제목`.
+- Do not create tags yourself. After the merge, `.github/workflows/rush-release.yml` creates the tag and the GitHub Release.
