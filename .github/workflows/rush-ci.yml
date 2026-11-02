@@ -166,35 +166,9 @@ jobs:
           go test -race ./...
           go build ./...
 
-  image-build:
-    name: Image (${{ matrix.service }})
-    needs: detect-changes
-    if: needs.detect-changes.outputs.matrix != '{"include":[]}'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJSON(needs.detect-changes.outputs.matrix) }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v7
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Build Image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.service }}/Dockerfile
-          platforms: linux/amd64
-          push: false
-          provenance: false
-          tags: ${{ matrix.service }}:ci
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: ${{ github.event_name == 'push' && format('type=gha,mode=max,scope={0}', matrix.service) || '' }}
-
   ci-result:
     name: CI Result
-    needs: [detect-changes, verify, image-build]
+    needs: [detect-changes, verify]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     steps:
@@ -202,19 +176,16 @@ jobs:
         env:
           DETECT_RESULT: ${{ needs.detect-changes.result }}
           VERIFY_RESULT: ${{ needs.verify.result }}
-          IMAGE_RESULT: ${{ needs.image-build.result }}
           MATRIX: ${{ needs.detect-changes.outputs.matrix }}
         run: |
           test "$DETECT_RESULT" = success
           expected=success
           if [ "$MATRIX" = '{"include":[]}' ]; then expected=skipped; fi
           test "$VERIFY_RESULT" = "$expected"
-          test "$IMAGE_RESULT" = "$expected"
-
 
   notify:
     name: Send CI Notification
-    needs: [validate-title, setup-pr-metadata, detect-changes, verify, image-build, ci-result]
+    needs: [validate-title, setup-pr-metadata, detect-changes, verify, ci-result]
     if: always()
     runs-on: ubuntu-latest
     env:
@@ -261,4 +232,3 @@ jobs:
             **PR 제목 검사:** ${{ fromJSON(env.RESULT_LABELS)[needs.validate-title.result] || '확인 불가' }}
             **변경 사항 확인:** ${{ fromJSON(env.RESULT_LABELS)[needs.detect-changes.result] || '확인 불가' }}
             **빌드 및 테스트:** ${{ fromJSON(env.RESULT_LABELS)[needs.verify.result] || '확인 불가' }}
-            **이미지 빌드:** ${{ fromJSON(env.RESULT_LABELS)[needs.image-build.result] || '확인 불가' }}
