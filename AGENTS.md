@@ -43,6 +43,7 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 
 - Format: `type(scope): description`. Use the same scopes as PR titles; the description is Korean, ends in a noun form, and has no trailing period. Example: `feat(gateway): 서비스 장애 시 fallback 응답 추가`
 - Keep one logical change per commit. Stage files by name; never use `git add -A` or `git add .`.
+- Do not use the `style` type. Fold formatting and lint fixes into the commit for the work that needed them.
 - Never add AI attribution: no `Co-Authored-By` trailer for an AI and no "Generated with" line in commits or PR bodies.
 - See `.agents/shared/commit-conventions.md` for choosing the type and scope. Where it differs, this file wins.
 
