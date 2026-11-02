@@ -4,6 +4,7 @@ plugins {
 
 dependencies {
     implementation(libs.spring.cloud.starter.gateway)
+    implementation(libs.spring.cloud.starter.circuitbreaker.reactor.resilience4j)
     implementation(libs.spring.cloud.starter.config)
     implementation(libs.spring.cloud.starter.netflix.eureka.client)
     implementation(libs.spring.boot.starter.actuator)

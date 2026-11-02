@@ -15,23 +15,53 @@ spring:
             - id: rush-auth
               uri: lb://rush-auth
               predicates: [Path=/auth/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-auth
+                    fallbackUri: forward:/fallback
             - id: rush-shop
               uri: lb://rush-shop
               predicates: [Path=/shop/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-shop
+                    fallbackUri: forward:/fallback
             - id: rush-minigame
               uri: lb://rush-minigame
               predicates: [Path=/minigame/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-minigame
+                    fallbackUri: forward:/fallback
             - id: rush-stage
               uri: lb://rush-stage
               predicates: [Path=/stage/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-stage
+                    fallbackUri: forward:/fallback
 
             # ---- NestJS 서비스: 주소로 바로 연결 ----
             - id: rush-user
               uri: ${USER_URL:http://localhost:8085}
               predicates: [Path=/user/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-user
+                    fallbackUri: forward:/fallback
             - id: rush-sp
               uri: ${SP_URL:http://localhost:8086}
               predicates: [Path=/sp/**]
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: rush-sp
+                    fallbackUri: forward:/fallback
 
             # ---- Go 실시간 서비스: WebSocket ----
             - id: rush-live
@@ -40,6 +70,20 @@ spring:
             - id: rush-chat
               uri: ${CHAT_URL:ws://localhost:8088}
               predicates: [Path=/chat/**]
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s
 
 management:
   endpoints:
