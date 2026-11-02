@@ -49,11 +49,39 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 
 ## Branches
 
-- Never commit directly to `main`. Branch off the remote `main`, work there, and merge through a PR.
+- Never commit directly to `develop` or `main`. Branch off the remote `develop`, work there, and merge back into `develop` through a PR.
+- `main` only receives release PRs from `develop`.
 - Name branches `<type>/<kebab-case-description>`, using the same type as the commit. Examples: `feat/gateway-fallback`, `fix/jwt-public-path`, `docs/agents-md`
 - Keep one piece of work per branch. Do not reuse a branch that has already been merged.
+- Never rename the branch of an open PR. GitHub closes the PR.
 
 ## Pull Requests
 
+- Every PR except a release PR targets `develop`.
 - Titles use the `[scope] title` format. Pick scopes from `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd`, separating multiple scopes with commas. Do not use a colon (`:`) in the title.
-- Bodies follow the overview (개요) and body (본문) sections of `.github/PULL_REQUEST_TEMPLATE.md`.
+- Bodies use the 개요 and 본문 sections of `.github/PULL_REQUEST_TEMPLATE.md` and stay short:
+  - 개요: one sentence on what changes.
+  - 본문: up to five one-line bullets on what changed. Add a merge-order or follow-up note only when one exists.
+  - Leave out verification logs, file-by-file descriptions, and background the diff already shows.
+
+## Release PRs
+
+- From `develop` to `main`, labeled `🌏 Deploy`.
+- Title: `vYYYYMMDD.n` — today's date in Asia/Seoul, then the next sequence after that date's existing tags, starting at `0`.
+- Body: exactly this, nothing more.
+  - 개요: `#{first} ~ #{last} 사이의 변경사항을 상용환경에 반영합니다.`, using the lowest and highest included PR numbers. For a single PR: `#{N}의 변경사항을 상용환경에 반영합니다.`
+  - 본문: each included PR as `- #N PR 제목`, in number order.
+
+  ```markdown
+  ## 개요
+
+  #2 ~ #7 사이의 변경사항을 상용환경에 반영합니다.
+
+  ## 본문
+
+  - #2 [ci/cd] 모듈별 CI 워크플로우 추가
+  - #6 [global] main 변경사항 develop 반영
+  - #7 [ci/cd] develop에서 main으로 가는 릴리즈 흐름 추가
+  ```
+
+- Do not create tags. After the merge, `.github/workflows/rush-release.yml` creates the tag and the GitHub Release.
