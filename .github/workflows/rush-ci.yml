@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'main'
+      - 'develop'
   workflow_dispatch:
 
 concurrency:
@@ -16,7 +17,7 @@ permissions:
 
 jobs:
   validate-title:
-    name: Validate PR Title
+    name: Validate PR
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -24,7 +25,18 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const title = context.payload.pull_request.title;
+            const pr = context.payload.pull_request;
+            const title = pr.title;
+
+            if (pr.base.ref === 'main') {
+              if (pr.head.ref !== 'develop') {
+                core.setFailed('Only develop can be merged into main. Target develop instead');
+              } else if (!/^v\d{8}\.\d+$/.test(title)) {
+                core.setFailed('Release PR title must be vYYYYMMDD.n');
+              }
+              return;
+            }
+
             const allowedScopes = [
               'global', 'gateway', 'config', 'eureka', 'auth', 'shop', 'minigame',
               'stage', 'user', 'sp', 'live', 'chat', 'ci/cd'

@@ -1,0 +1,45 @@
+name: Rush Release Workflow
+
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - 'main'
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  release:
+    name: Publish Release
+    if: github.event.pull_request.merged && github.event.pull_request.head.ref == 'develop'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Select Release Tag
+        id: tag
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if [[ "$TITLE" =~ ^v[0-9]{8}\.[0-9]+$ ]] && ! git rev-parse -q --verify "refs/tags/$TITLE" >/dev/null; then
+            tag="$TITLE"
+          else
+            date=$(TZ=Asia/Seoul date +%Y%m%d)
+            last=$(git tag --list "v${date}.*" | sed "s/^v${date}\.//" | sort -n | tail -1)
+            tag="v${date}.$(( ${last:--1} + 1 ))"
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "Release tag: $tag"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          TARGET: ${{ github.event.pull_request.merge_commit_sha }}
+        run: gh release create "$TAG" --repo "${{ github.repository }}" --target "$TARGET" --title "$TAG" --generate-notes
