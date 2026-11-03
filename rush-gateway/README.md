@@ -15,11 +15,19 @@ Spring Cloud Gateway. 외부 요청을 받는 유일한 입구이며, JWT 검증
 
 WebSocket을 제외한 라우트는 서킷브레이커(Resilience4j)를 거칩니다. 연결 실패와 서비스의 500·502·503·504 응답을 실패로 집계합니다. 최근 20건 중 절반이 실패하면 10초 동안 차단합니다. 응답은 원인별로 나뉩니다. 5초 안에 응답이 없으면 `504`, 서비스가 5xx를 돌려주면 `502`, 차단 중이거나 연결할 수 없으면 `503`입니다.
 
-게이트웨이가 만드는 에러는 모두 같은 형식입니다.
+## 공통 응답
+
+클라이언트가 받는 JSON 응답은 모두 `{status, code, message, data}` 형식이며, `data`가 없으면 생략합니다.
 
 ```json
-{ "code": "UNAUTHORIZED", "message": "인증이 필요합니다." }
+{ "status": 200, "code": "OK", "message": "요청에 성공했습니다.", "data": { "id": 1 } }
+{ "status": 401, "code": "UNAUTHORIZED", "message": "인증이 필요합니다." }
 ```
+
+- 게이트웨이가 직접 만드는 오류(400·401·403·404·5xx·fallback)는 처음부터 이 형식입니다.
+- 서비스의 JSON 응답은 `ApiResponseWrapperFilter`가 감쌉니다. 성공 응답은 원본을 `data`에 넣습니다. 오류 응답은 원본의 `code`, `message`를 쓰고, 없으면 상태 이름과 reason phrase를 씁니다.
+- 이미 `status`, `code`, `message`를 모두 가진 응답, JSON이 아닌 응답, 압축된 응답, 204·304, HEAD, WebSocket, actuator·fallback·Swagger 경로는 감싸지 않습니다.
+- 1MB(`gateway.response-wrapper.max-size`)를 넘는 응답은 감싸지 않고 원문을 그대로 보냅니다.
 
 모든 요청에 `X-Request-Id`를 새로 붙여 서비스와 응답에 넘기고, 메서드·경로·상태·소요 시간·사용자 ID를 한 줄로 남깁니다.
 

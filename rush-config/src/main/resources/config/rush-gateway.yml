@@ -9,6 +9,9 @@ gateway:
   trusted-proxies: ${TRUSTED_PROXIES:}
   # CORS를 허용할 Origin(콤마 구분). 비어 있으면 CORS를 허용하지 않습니다.
   cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+  response-wrapper:
+    # 이보다 큰 서비스 응답은 공통 형식으로 감싸지 않고 원문을 보냅니다.
+    max-size: 1MB
 
 # 공통 application.yml의 exposure를 덮어씁니다. health 외에는 허용 IP에서만 열립니다.
 management:
