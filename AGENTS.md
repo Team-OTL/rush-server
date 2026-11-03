@@ -58,7 +58,7 @@ These are the same commands CI (`.github/workflows/rush-ci.yml`) runs. Make them
 ## Pull Requests
 
 - Every PR except a release PR targets `develop`.
-- Titles use the `[scope] title` format. Pick scopes from `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd`, separating multiple scopes with commas. Do not use a colon (`:`) in the title.
+- Titles use the `[scope] title` format. Pick scopes from `global`, `gateway`, `config`, `eureka`, `auth`, `shop`, `minigame`, `stage`, `user`, `sp`, `live`, `chat`, `ci/cd`. When a PR spans more than one scope, use `[global]` instead of listing them. Do not use a colon (`:`) in the title.
 - Bodies use the 개요 and 본문 sections of `.github/PULL_REQUEST_TEMPLATE.md` and stay short:
   - 개요: one sentence on what changes.
   - 본문: up to five one-line bullets on what changed. Add a merge-order or follow-up note only when one exists.

@@ -36,7 +36,8 @@ isn't available, do the same three passes yourself, one after another.
 
 ## Step 3 — Write the Spec
 
-Write it to `<feature-name>.spec.md` and tell me the path. It exists to survive the conversation, so record
+Write it to `<feature-name>.spec.md` and tell me the path. The spec is a working document: never stage,
+commit, or push it, and keep it out of every PR. It exists to survive the conversation, so record
 the reasoning and not just the conclusion:
 
 - **Goal** — what changes for the user, and what is explicitly out of scope

@@ -54,10 +54,13 @@ jobs:
               return;
             }
 
-            const invalidScopes = scopesPart.split(',').map(s => s.trim())
-              .filter(scope => !allowedScopes.includes(scope));
-            if (invalidScopes.length > 0) {
-              core.setFailed(`Invalid scope(s): ${invalidScopes.join(', ')}`);
+            if (scopesPart.includes(',')) {
+              core.setFailed('Use a single scope. For changes spanning several scopes, use [global]');
+              return;
+            }
+
+            if (!allowedScopes.includes(scopesPart.trim())) {
+              core.setFailed(`Invalid scope: ${scopesPart}`);
             }
 
   setup-pr-metadata:

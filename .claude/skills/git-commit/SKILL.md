@@ -63,6 +63,8 @@ Commit when the user asks for it. Finishing a piece of work is not itself a requ
    - Unrelated changes → separate commits
 3. For each logical group:
    - Stage the relevant files **by name**: `git add <file1> <file2> ...`
+   - Never stage planning documents — `*.spec.md`, `plan*.md`, `계획*.md`. They are working notes from
+     the planning skill, not part of the change. If one is already staged, unstage it.
    - Never `git add -A` or `git add .` — they sweep in whatever else is in the tree, which is how an
      unrelated file or a secret ends up in someone's commit. Leave the rest unstaged and tell the user
      what you skipped.
