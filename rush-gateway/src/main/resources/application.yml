@@ -101,6 +101,18 @@ spring:
               uri: ${CHAT_URL:ws://localhost:8088}
               predicates: [Path=/chat/**]
 
+# 각 서비스의 OpenAPI 문서를 라우트로 가져와 /swagger-ui.html 한 곳에서 봅니다. 문서 경로는 토큰 없이 열립니다.
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - { name: auth, url: /auth/v3/api-docs }
+      - { name: shop, url: /shop/v3/api-docs }
+      - { name: minigame, url: /minigame/v3/api-docs }
+      - { name: stage, url: /stage/v3/api-docs }
+      - { name: user, url: /user/v3/api-docs }
+      - { name: sp, url: /sp/v3/api-docs }
+
 resilience4j:
   circuitbreaker:
     configs:

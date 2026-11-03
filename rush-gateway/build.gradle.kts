@@ -10,6 +10,7 @@ dependencies {
     implementation(libs.spring.boot.starter.actuator)
     implementation(libs.spring.boot.starter.security)
     implementation(libs.micrometer.context.propagation)
+    implementation(libs.springdoc.openapi.webflux.ui)
     implementation(libs.jjwt.api)
     runtimeOnly(libs.jjwt.impl)
     runtimeOnly(libs.jjwt.jackson)

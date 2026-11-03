@@ -1,0 +1,19 @@
+import { INestApplication } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+/**
+ * OpenAPI 문서를 /user/v3/api-docs 에 냅니다. 게이트웨이 Swagger UI가 이 경로로 문서를 가져옵니다.
+ * servers를 비워 두면 Swagger UI가 문서를 받아 온 게이트웨이 주소로 요청을 보냅니다.
+ */
+export function setupSwagger(app: INestApplication): void {
+  const config = new DocumentBuilder()
+    .setTitle('rush-user')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('user/docs', app, document, {
+    jsonDocumentUrl: 'user/v3/api-docs',
+    yamlDocumentUrl: 'user/v3/api-docs.yaml',
+  });
+}
