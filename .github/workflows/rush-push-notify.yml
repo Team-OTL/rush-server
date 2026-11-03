@@ -1,0 +1,24 @@
+name: Push Notification
+
+# 저장소 웹훅은 force push를 걸러낼 수 없어 push 이벤트를 받지 않습니다.
+# 대신 이 워크플로가 일반 push만 같은 Discord 채널로 전달합니다.
+on:
+  push:
+
+permissions: {}
+
+jobs:
+  notify:
+    name: Forward Push to Discord
+    if: ${{ !github.event.forced }}
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_GITHUB_WEBHOOK }}
+    steps:
+      - name: Send Push Event
+        if: env.DISCORD_WEBHOOK != ''
+        run: |
+          curl -fsS -X POST "$DISCORD_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: push" \
+            --data-binary @"$GITHUB_EVENT_PATH"
