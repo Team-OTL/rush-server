@@ -1,3 +1,18 @@
 # rush-gateway 전용 설정 (라우팅은 rush-gateway/application.yml 참고)
 server:
   port: 8080
+
+gateway:
+  # actuator 관리용 엔드포인트(health 제외)에 접근할 수 있는 IP 대역(CIDR, 콤마 구분)
+  admin-allowed-ips: ${GATEWAY_ADMIN_ALLOWED_IPS:127.0.0.1/32,::1/128}
+  # 앞단 LB/프록시 대역. 이 대역에서 온 요청만 X-Forwarded-For를 믿습니다.
+  trusted-proxies: ${TRUSTED_PROXIES:}
+  # CORS를 허용할 Origin(콤마 구분). 비어 있으면 CORS를 허용하지 않습니다.
+  cors-allowed-origins: ${CORS_ALLOWED_ORIGINS:}
+
+# 공통 application.yml의 exposure를 덮어씁니다. health 외에는 허용 IP에서만 열립니다.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, gateway, circuitbreakers

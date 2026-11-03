@@ -80,6 +80,9 @@ services:
       SP_URL: http://rush-sp:8086
       LIVE_URL: ws://rush-live:8087
       CHAT_URL: ws://rush-chat:8088
+      GATEWAY_ADMIN_ALLOWED_IPS: ${GATEWAY_ADMIN_ALLOWED_IPS:-127.0.0.1/32,::1/128}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
     ports: ["8080:8080"]   # 외부에 열리는 유일한 포트
     depends_on:
       rush-config: { condition: service_healthy }
