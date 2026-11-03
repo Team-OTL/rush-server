@@ -1,5 +1,6 @@
 package com.rush.gateway.filter
 
+import com.rush.gateway.error.ErrorResponseWriter
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
@@ -18,6 +19,7 @@ import reactor.core.publisher.Mono
 @Component
 class JwtAuthenticationFilter(
     @Value("\${jwt.secret}") secret: String,
+    private val errorResponseWriter: ErrorResponseWriter,
 ) : GlobalFilter,
     Ordered {
     private val key = Keys.hmacShaKeyFor(secret.toByteArray())
@@ -52,14 +54,12 @@ class JwtAuthenticationFilter(
                     .payload.subject
             }.getOrNull() ?: return unauthorized(exchange)
 
+        exchange.attributes[USER_ID_HEADER] = userId
         val authed = sanitized.mutate().header(USER_ID_HEADER, userId).build()
         return chain.filter(exchange.mutate().request(authed).build())
     }
 
-    private fun unauthorized(exchange: ServerWebExchange): Mono<Void> {
-        exchange.response.statusCode = HttpStatus.UNAUTHORIZED
-        return exchange.response.setComplete()
-    }
+    private fun unauthorized(exchange: ServerWebExchange): Mono<Void> = errorResponseWriter.write(exchange, HttpStatus.UNAUTHORIZED)
 
     override fun getOrder() = -1
 
