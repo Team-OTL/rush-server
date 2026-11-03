@@ -27,6 +27,9 @@ git diff "origin/$BASE...HEAD"
 cat .github/PULL_REQUEST_TEMPLATE.md 2>/dev/null
 ```
 
+If the diff adds a planning document (`*.spec.md`, `plan*.md`, `계획*.md`), remove it from the branch with a
+`git rm --cached` commit before creating the PR, and keep the local file. Planning documents never go into a PR.
+
 ## Step 3 — Learn This Project's Scope Vocabulary
 
 Read `.claude/shared/commit-conventions.md` — it holds the commands for reading the repo's existing
