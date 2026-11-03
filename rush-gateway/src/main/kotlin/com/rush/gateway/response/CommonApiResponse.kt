@@ -1,13 +1,34 @@
-package com.rush.gateway.error
+package com.rush.gateway.response
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.springframework.http.HttpStatus
 
-data class ErrorResponse(
+/**
+ * 클라이언트가 받는 공통 응답 형식입니다. 서비스 응답은 ApiResponseWrapperFilter가,
+ * 게이트웨이가 직접 만드는 오류는 ErrorResponseWriter가 이 형식으로 씁니다. data가 없으면 필드를 생략합니다.
+ */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CommonApiResponse(
+    val status: Int,
     val code: String,
     val message: String,
+    val data: Any? = null,
 ) {
     companion object {
-        fun of(status: HttpStatus) = ErrorResponse(status.name, messageOf(status))
+        const val SUCCESS_MESSAGE = "요청에 성공했습니다."
+
+        fun success(
+            status: HttpStatus,
+            data: Any?,
+        ) = CommonApiResponse(status.value(), status.name, SUCCESS_MESSAGE, data)
+
+        fun error(status: HttpStatus) = error(status.value(), status.name, messageOf(status))
+
+        fun error(
+            status: Int,
+            code: String,
+            message: String,
+        ) = CommonApiResponse(status, code, message)
 
         private fun messageOf(status: HttpStatus) =
             when (status) {

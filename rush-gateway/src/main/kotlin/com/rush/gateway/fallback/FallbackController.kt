@@ -1,6 +1,6 @@
 package com.rush.gateway.fallback
 
-import com.rush.gateway.error.ErrorResponse
+import com.rush.gateway.response.CommonApiResponse
 import org.slf4j.LoggerFactory
 import org.springframework.cloud.gateway.filter.factory.SpringCloudCircuitBreakerFilterFactory.CircuitBreakerStatusCodeException
 import org.springframework.cloud.gateway.route.Route
@@ -18,7 +18,7 @@ class FallbackController {
     private val log = LoggerFactory.getLogger(javaClass)
 
     @RequestMapping("/fallback")
-    fun fallback(exchange: ServerWebExchange): ResponseEntity<ErrorResponse> {
+    fun fallback(exchange: ServerWebExchange): ResponseEntity<CommonApiResponse> {
         val cause = exchange.getAttribute<Throwable>(CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR)
         val status = statusOf(cause)
         log.warn(
@@ -27,7 +27,7 @@ class FallbackController {
             status.value(),
             cause.toString(),
         )
-        return ResponseEntity.status(status).body(ErrorResponse.of(status))
+        return ResponseEntity.status(status).body(CommonApiResponse.error(status))
     }
 
     // 응답 지연은 504, 서비스가 5xx를 돌려줬으면 502, 차단기가 열렸거나 연결에 실패했으면 503입니다.
