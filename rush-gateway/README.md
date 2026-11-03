@@ -39,6 +39,16 @@ WebSocket을 제외한 라우트는 서킷브레이커를 거칩니다. 서비�
 - WebSocket용 `?token=`은 검증이 끝나면 지우고 서비스로 넘깁니다.
 - 각 서비스의 `/{prefix}/v3/api-docs`는 토큰 없이 접근할 수 있습니다.
 
+## 로그
+
+로그는 JSON 한 줄(logstash 형식)로 stdout에 남깁니다. 요청마다 `X-Request-Id`를 새로 만들어 서비스와 응답에 넘깁니다. 접근 로그는 요청이 끝날 때 한 줄씩 남깁니다.
+
+```json
+{"message":"GET /user/ping 200 4ms","requestId":"18e0…","userId":"42","clientIp":"127.0.0.1","method":"GET","path":"/user/ping","status":200,"latencyMs":4,"routeId":"rush-user"}
+```
+
+`requestId`, `userId`, `clientIp`는 MDC로 이어지므로, 요청 처리 중 남긴 다른 로그에도 들어갑니다.
+
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
 | `GATEWAY_ADMIN_ALLOWED_IPS` | `127.0.0.1/32,::1/128` | 관리용 actuator 허용 대역 |
