@@ -3,7 +3,6 @@ package com.rush.gateway.filter
 import com.rush.gateway.error.ErrorResponseWriter
 import com.rush.gateway.security.ClientIpResolver
 import org.springframework.core.Ordered
-import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
@@ -66,7 +65,8 @@ class RequestSanitizeFilter(
         val own =
             Forwarded(
                 proto = proto,
-                host = headers.getFirst(HttpHeaders.HOST)?.substringBefore(':') ?: uri.host.orEmpty(),
+                // IPv6 Host([::1]:8080)도 대괄호를 포함한 호스트만 남도록 URI에서 읽습니다.
+                host = uri.host.orEmpty(),
                 port =
                     (
                         if (uri.port != -1) {
