@@ -13,6 +13,8 @@ import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.util.UriComponentsBuilder
 import reactor.core.publisher.Mono
 import java.net.URI
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 /**
  * 게이트웨이에서 JWT를 한 번만 검증하고, 검증된 사용자 ID를 X-User-Id 헤더로 뒤쪽 서비스에 넘깁니다.
@@ -71,12 +73,19 @@ class JwtAuthenticationFilter(
         return chain.filter(exchange.mutate().request(authed).build())
     }
 
-    private fun withoutTokenQuery(uri: URI): URI =
-        UriComponentsBuilder
+    // 인증은 디코딩된 키로 토큰을 읽으므로, ?%74oken=처럼 인코딩된 키도 디코딩한 뒤 비교해 지웁니다.
+    private fun withoutTokenQuery(uri: URI): URI {
+        val rawQuery = uri.rawQuery ?: return uri
+        val kept = rawQuery.split('&').filterNot { decodedKey(it) == TOKEN_QUERY }
+        return UriComponentsBuilder
             .fromUri(uri)
-            .replaceQueryParam(TOKEN_QUERY)
+            .replaceQuery(kept.joinToString("&").ifEmpty { null })
             .build(true)
             .toUri()
+    }
+
+    private fun decodedKey(param: String): String? =
+        runCatching { URLDecoder.decode(param.substringBefore('='), StandardCharsets.UTF_8) }.getOrNull()
 
     private fun unauthorized(exchange: ServerWebExchange): Mono<Void> = errorResponseWriter.write(exchange, HttpStatus.UNAUTHORIZED)
 

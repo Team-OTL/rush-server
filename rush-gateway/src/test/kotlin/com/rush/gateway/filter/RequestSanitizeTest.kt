@@ -77,6 +77,34 @@ class RequestSanitizeTest {
     }
 
     @Test
+    fun `키를 인코딩해 보낸 쿼리 토큰도 서비스에 넘기지 않는다`() {
+        client
+            .get()
+            .uri(URI.create("http://localhost:$port/user/ping?%74oken=${token("7")}&room=1"))
+            .exchange()
+            .expectStatus()
+            .isOk
+
+        assertThat(received.get().query).isEqualTo("room=1")
+        assertThat(received.get().headers.getFirst("X-User-Id")).isEqualTo("7")
+    }
+
+    @Test
+    fun `IPv6 Host 헤더는 대괄호를 포함한 호스트로 전달한다`() {
+        val response =
+            Socket("localhost", port).use { socket ->
+                socket.getOutputStream().write(
+                    "GET /user/ping HTTP/1.1\r\nHost: [::1]:$port\r\nAuthorization: Bearer ${token("42")}\r\nConnection: close\r\n\r\n"
+                        .toByteArray(),
+                )
+                socket.getInputStream().bufferedReader().readLine()
+            }
+
+        assertThat(response).startsWith("HTTP/1.1 200")
+        assertThat(received.get().headers.getFirst("X-Forwarded-Host")).isEqualTo("[::1]")
+    }
+
+    @Test
     fun `경로 조작 요청은 400 공통 응답을 준다`() {
         client
             .get()
