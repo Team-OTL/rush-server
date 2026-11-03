@@ -1,5 +1,6 @@
 package com.rush.gateway.error
 
+import com.rush.gateway.logging.RequestContext
 import org.slf4j.LoggerFactory
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler
 import org.springframework.core.annotation.Order
@@ -26,7 +27,10 @@ class GlobalErrorHandler(
 
         val status = statusOf(ex)
         if (status.is5xxServerError) {
-            log.error("요청 처리 실패 {} {}", exchange.request.method, exchange.request.path, ex)
+            // 이 핸들러는 WebFilter 체인 바깥이라 Reactor context가 없으므로 exchange에서 MDC를 채웁니다.
+            RequestContext.withMdc(exchange) {
+                log.error("요청 처리 실패 {} {}", exchange.request.method, exchange.request.path, ex)
+            }
         }
         return writer.write(exchange, status)
     }

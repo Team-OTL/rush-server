@@ -8,6 +8,9 @@ spring:
     name: rush-gateway
   config:
     import: optional:configserver:${CONFIG_URL:http://localhost:8888}
+  reactor:
+    # Reactor context의 requestId·userId·clientIp를 로그 MDC로 이어 줍니다.
+    context-propagation: auto
   autoconfigure:
     # 로그인 사용자가 없으므로 기본 사용자와 임시 비밀번호를 만들지 않습니다.
     exclude: org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
@@ -110,3 +113,9 @@ management:
     gateway:
       # SCG 기본값은 none(꺼짐)입니다. 라우트 조회만 열고 생성·삭제·refresh는 막습니다.
       access: read-only
+
+# 로그를 JSON 한 줄로 남깁니다. MDC(requestId, userId, clientIp)와 접근 로그 필드가 그대로 들어갑니다.
+logging:
+  structured:
+    format:
+      console: logstash

@@ -1,6 +1,7 @@
 package com.rush.gateway.filter
 
 import com.rush.gateway.error.ErrorResponseWriter
+import com.rush.gateway.logging.RequestContext
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
@@ -61,6 +62,7 @@ class JwtAuthenticationFilter(
             }.getOrNull() ?: return unauthorized(exchange)
 
         exchange.attributes[USER_ID_HEADER] = userId
+        RequestContext.put(exchange, RequestContext.USER_ID, userId)
         // 쿼리로 받은 토큰은 검증이 끝났으므로 서비스 쪽 로그에 남지 않게 지웁니다.
         val authed =
             sanitized
@@ -68,7 +70,9 @@ class JwtAuthenticationFilter(
                 .uri(withoutTokenQuery(request.uri))
                 .header(USER_ID_HEADER, userId)
                 .build()
-        return chain.filter(exchange.mutate().request(authed).build())
+        return chain
+            .filter(exchange.mutate().request(authed).build())
+            .contextWrite { it.put(RequestContext.USER_ID, userId) }
     }
 
     private fun withoutTokenQuery(uri: URI): URI =
