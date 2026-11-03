@@ -62,6 +62,12 @@ class ApiResponseWrappingPolicyTest {
     }
 
     @Test
+    fun `부분 응답은 감싸지 않는다`() {
+        assertEquals(Decision.SKIP_PARTIAL, decide(status = HttpStatus.PARTIAL_CONTENT))
+        assertEquals(Decision.SKIP_PARTIAL, decide(responseHeaders = json().apply { set(HttpHeaders.CONTENT_RANGE, "bytes 0-6/20") }))
+    }
+
+    @Test
     fun `압축된 응답은 감싸지 않는다`() {
         assertEquals(Decision.SKIP_ENCODED, decide(responseHeaders = json().apply { set(HttpHeaders.CONTENT_ENCODING, "gzip") }))
         assertEquals(Decision.WRAP, decide(responseHeaders = json().apply { set(HttpHeaders.CONTENT_ENCODING, "identity") }))

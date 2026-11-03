@@ -31,6 +31,8 @@ class ApiResponseWrappingPolicy(
             requestHeaders.upgrade.equals("websocket", ignoreCase = true) -> Decision.SKIP_WEBSOCKET
             method == HttpMethod.HEAD -> Decision.SKIP_NO_BODY
             status == HttpStatus.NO_CONTENT || status == HttpStatus.NOT_MODIFIED -> Decision.SKIP_NO_BODY
+            // Content-Range는 원본 본문 기준이라 감싸면 범위가 맞지 않습니다.
+            status == HttpStatus.PARTIAL_CONTENT || responseHeaders.containsKey(HttpHeaders.CONTENT_RANGE) -> Decision.SKIP_PARTIAL
             isEncoded(responseHeaders) -> Decision.SKIP_ENCODED
             !isJson(responseHeaders.contentType) -> Decision.SKIP_NOT_JSON
             responseHeaders.contentLength > maxBytes -> Decision.SKIP_TOO_LARGE
@@ -52,6 +54,7 @@ class ApiResponseWrappingPolicy(
         SKIP_EXCLUDED_PATH,
         SKIP_WEBSOCKET,
         SKIP_NO_BODY,
+        SKIP_PARTIAL,
         SKIP_ENCODED,
         SKIP_NOT_JSON,
         SKIP_TOO_LARGE,

@@ -27,8 +27,15 @@ describe('AppController (e2e)', () => {
     const response = await request(app.getHttpServer())
       .get('/user/v3/api-docs')
       .expect(200);
-    const body = response.body as { openapi: string; servers?: unknown[] };
+    const body = response.body as {
+      openapi: string;
+      servers?: unknown[];
+      security?: Record<string, unknown>[];
+      components?: { securitySchemes?: Record<string, { scheme?: string }> };
+    };
     expect(body.openapi).toMatch(/^3\./);
     expect(body.servers ?? []).toHaveLength(0);
+    expect(body.components?.securitySchemes?.bearer?.scheme).toBe('bearer');
+    expect(body.security).toContainEqual({ bearer: [] });
   });
 });
