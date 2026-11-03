@@ -38,6 +38,8 @@ spring:
                   args:
                     name: rush-auth
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
             - id: rush-shop
               uri: lb://rush-shop
               predicates: [Path=/shop/**]
@@ -46,6 +48,8 @@ spring:
                   args:
                     name: rush-shop
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
             - id: rush-minigame
               uri: lb://rush-minigame
               predicates: [Path=/minigame/**]
@@ -54,6 +58,8 @@ spring:
                   args:
                     name: rush-minigame
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
             - id: rush-stage
               uri: lb://rush-stage
               predicates: [Path=/stage/**]
@@ -62,6 +68,8 @@ spring:
                   args:
                     name: rush-stage
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
 
             # ---- NestJS 서비스: 주소로 바로 연결 ----
             - id: rush-user
@@ -72,6 +80,8 @@ spring:
                   args:
                     name: rush-user
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
             - id: rush-sp
               uri: ${SP_URL:http://localhost:8086}
               predicates: [Path=/sp/**]
@@ -80,6 +90,8 @@ spring:
                   args:
                     name: rush-sp
                     fallbackUri: forward:/fallback
+                    # 서비스의 5xx도 실패로 집계해 차단기를 엽니다.
+                    statusCodes: [500, 502, 503, 504]
 
             # ---- Go 실시간 서비스: WebSocket ----
             - id: rush-live

@@ -2,6 +2,7 @@ package com.rush.gateway.fallback
 
 import com.rush.gateway.error.ErrorResponse
 import org.slf4j.LoggerFactory
+import org.springframework.cloud.gateway.filter.factory.SpringCloudCircuitBreakerFilterFactory.CircuitBreakerStatusCodeException
 import org.springframework.cloud.gateway.route.Route
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils.CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR
@@ -19,7 +20,7 @@ class FallbackController {
     @RequestMapping("/fallback")
     fun fallback(exchange: ServerWebExchange): ResponseEntity<ErrorResponse> {
         val cause = exchange.getAttribute<Throwable>(CIRCUITBREAKER_EXECUTION_EXCEPTION_ATTR)
-        val status = if (cause is TimeoutException) HttpStatus.GATEWAY_TIMEOUT else HttpStatus.SERVICE_UNAVAILABLE
+        val status = statusOf(cause)
         log.warn(
             "fallback route={} status={} cause={}",
             exchange.getAttribute<Route>(GATEWAY_ROUTE_ATTR)?.id,
@@ -28,4 +29,12 @@ class FallbackController {
         )
         return ResponseEntity.status(status).body(ErrorResponse.of(status))
     }
+
+    // 응답 지연은 504, 서비스가 5xx를 돌려줬으면 502, 차단기가 열렸거나 연결에 실패했으면 503입니다.
+    private fun statusOf(cause: Throwable?) =
+        when (cause) {
+            is TimeoutException -> HttpStatus.GATEWAY_TIMEOUT
+            is CircuitBreakerStatusCodeException -> HttpStatus.BAD_GATEWAY
+            else -> HttpStatus.SERVICE_UNAVAILABLE
+        }
 }
