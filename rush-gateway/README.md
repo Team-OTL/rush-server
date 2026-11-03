@@ -63,6 +63,14 @@ WebSocket을 제외한 라우트는 서킷브레이커(Resilience4j)를 거칩�
 | `TRUSTED_PROXIES` | 없음 | 앞단 LB/프록시 대역 |
 | `CORS_ALLOWED_ORIGINS` | 없음 | CORS 허용 Origin |
 
+## Swagger
+
+`http://localhost:8080/swagger-ui.html`에서 auth, shop, minigame, stage, user, sp의 API 문서를 함께 볼 수 있습니다.
+
+- 각 서비스는 `/{prefix}/v3/api-docs`에 문서를 냅니다. 게이트웨이가 이 경로를 라우트로 가져오며, 토큰 없이 열립니다.
+- "Try it out" 요청은 게이트웨이(8080)로 갑니다. 인증이 필요한 API는 Authorize에 JWT를 넣으세요.
+- live, chat은 WebSocket뿐이라 제외했습니다.
+
 ## 실행
 
 ```bash

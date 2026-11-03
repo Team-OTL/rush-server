@@ -1,3 +1,10 @@
 # rush-shop 전용 설정
 server:
   port: 8082
+  # 게이트웨이가 넘긴 X-Forwarded-*로 Swagger 서버 주소를 게이트웨이 주소로 만듭니다.
+  forward-headers-strategy: framework
+
+# 게이트웨이 Swagger UI가 /shop/** 라우트로 가져갈 수 있게 문서 경로에 prefix를 붙입니다.
+springdoc:
+  api-docs:
+    path: /shop/v3/api-docs
