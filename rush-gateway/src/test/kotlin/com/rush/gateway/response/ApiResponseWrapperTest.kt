@@ -90,6 +90,24 @@ class ApiResponseWrapperTest {
     }
 
     @Test
+    fun `소수는 원문 자릿수 그대로 감싼다`() {
+        val body = get("/decimal").expectBody(String::class.java).returnResult().responseBody!!
+
+        assertThat(body).contains(""""data":{"amount":1234567890.123456789,"price":1.50}""")
+    }
+
+    @Test
+    fun `부분 응답은 Content-Range와 함께 그대로 둔다`() {
+        get("/partial")
+            .expectStatus()
+            .isEqualTo(206)
+            .expectHeader()
+            .valueEquals("Content-Range", "bytes 0-6/20")
+            .expectBody(String::class.java)
+            .isEqualTo("""{"a":1}""")
+    }
+
+    @Test
     fun `이미 공통 형식인 응답은 그대로 둔다`() {
         get("/wrapped")
             .expectBody()
@@ -130,12 +148,15 @@ class ApiResponseWrapperTest {
                                     """{"status":201,"code":"CREATED","message":"생성됨","data":{"id":9}}""",
                                 )
                             "/text" -> Triple(200, "text/plain", "plain")
+                            "/decimal" -> Triple(200, "application/json", """{"amount":1234567890.123456789,"price":1.50}""")
+                            "/partial" -> Triple(206, "application/json", """{"a":1}""")
                             "/large" -> Triple(200, "application/json", largeJson)
                             else -> Triple(404, "text/plain", "")
                         }
                     val bytes = body.toByteArray()
                     exchange.responseHeaders.set("Content-Type", type)
                     exchange.responseHeaders.set("ETag", "\"v1\"")
+                    if (exchange.requestURI.path.endsWith("/partial")) exchange.responseHeaders.set("Content-Range", "bytes 0-6/20")
                     // /large는 길이를 모르는 chunked 응답으로 보냅니다.
                     val length = if (exchange.requestURI.path.endsWith("/large")) 0L else bytes.size.toLong()
                     exchange.sendResponseHeaders(status, length)
