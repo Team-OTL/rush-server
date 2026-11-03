@@ -6,6 +6,9 @@ spring:
     name: rush-gateway
   config:
     import: optional:configserver:${CONFIG_URL:http://localhost:8888}
+  autoconfigure:
+    # 로그인 사용자가 없으므로 기본 사용자와 임시 비밀번호를 만들지 않습니다.
+    exclude: org.springframework.boot.autoconfigure.security.reactive.ReactiveUserDetailsServiceAutoConfiguration
   cloud:
     loadbalancer:
       cache:
@@ -90,8 +93,13 @@ resilience4j:
       default:
         timeout-duration: 5s
 
+# health만 공개되고, 나머지는 SecurityConfig가 gateway.admin-allowed-ips에서만 허용합니다.
 management:
   endpoints:
     web:
       exposure:
-        include: health, info, gateway
+        include: health, info, gateway, circuitbreakers
+  endpoint:
+    gateway:
+      # SCG 기본값은 none(꺼짐)입니다. 라우트 조회만 열고 생성·삭제·refresh는 막습니다.
+      access: read-only

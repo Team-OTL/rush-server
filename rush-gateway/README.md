@@ -23,6 +23,19 @@ WebSocket을 제외한 라우트는 서킷브레이커를 거칩니다. 서비�
 
 모든 요청에 `X-Request-Id`를 새로 붙여 서비스와 응답에 넘기고, 메서드·경로·상태·소요 시간·사용자 ID를 한 줄로 남깁니다.
 
+## 접근 제어
+
+- JWT 검증은 `JwtAuthenticationFilter`가 라우트마다 합니다. Spring Security는 경로 접근 규칙, CORS, 보안 응답 헤더만 맡습니다.
+- actuator는 `/actuator/health`만 공개합니다. `gateway`(라우트 조회만), `circuitbreakers`, `info`는 `GATEWAY_ADMIN_ALLOWED_IPS`에 속한 IP에서만 열리고, 그 외에는 `403`을 돌려줍니다.
+- 클라이언트 IP는 연결 IP로 판별합니다. 연결 IP가 `TRUSTED_PROXIES`에 속할 때만 `X-Forwarded-For`를 읽으므로, 헤더를 위조해도 IP 제한을 우회할 수 없습니다.
+- docker compose로 띄우면 호스트에서 보낸 요청은 도커 브리지 IP로 들어옵니다. 호스트에서 관리용 엔드포인트를 보려면 `GATEWAY_ADMIN_ALLOWED_IPS`에 그 대역을 추가하세요.
+
+| 환경변수 | 기본값 | 설명 |
+|---|---|---|
+| `GATEWAY_ADMIN_ALLOWED_IPS` | `127.0.0.1/32,::1/128` | 관리용 actuator 허용 대역 |
+| `TRUSTED_PROXIES` | 없음 | 앞단 LB/프록시 대역 |
+| `CORS_ALLOWED_ORIGINS` | 없음 | CORS 허용 Origin |
+
 ## 실행
 
 ```bash
