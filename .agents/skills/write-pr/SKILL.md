@@ -51,7 +51,7 @@ matches, attach none — a wrong label is worse than no label, and an undefined 
 
 **Title** — Generate 3 options in the format `[scope] description`:
 
-- Scope: from Step 3. Lowercase, in brackets — `[member]`, `[expo]`, `[global]`
+- Scope: from Step 3. Lowercase, in brackets — `[member]`, `[expo]`, `[global]`. One scope only; a PR spanning several scopes uses `[global]`, never a comma-separated list
 - Description: Korean, concise, no emojis, max 50 characters total
 - Wrap class names, method names, annotations, file names, and technical terms in backticks (e.g., `@Transactional`, `MemberService`, `SKILL.md`)
 
