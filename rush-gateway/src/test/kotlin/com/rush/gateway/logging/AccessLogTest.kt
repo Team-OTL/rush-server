@@ -18,6 +18,7 @@ import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.web.reactive.server.WebTestClient
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.time.Duration
 
 private const val SECRET = "test-secret-key-for-gateway-access-log-test-0123456789"
 
@@ -41,8 +42,11 @@ class AccessLogTest {
     fun `요청마다 JSON 접근 로그를 한 줄 남긴다`(output: CapturedOutput) {
         val requestId = requestIdOf("/user/ping", token("42"))
 
-        val accessLogs = jsonLines(output).filter { it.path("logger_name").asText().endsWith("AccessLogFilter") }
-        val line = accessLogs.single { it.path("requestId").asText() == requestId }
+        val line =
+            awaitLine(output) {
+                it.path("requestId").asText() == requestId &&
+                    it.path("logger_name").asText().endsWith("AccessLogFilter")
+            }
         assertThat(line.path("userId").asText()).isEqualTo("42")
         assertThat(line.path("clientIp").asText()).isEqualTo("127.0.0.1")
         assertThat(line.path("routeId").asText()).isEqualTo("rush-user")
@@ -55,7 +59,7 @@ class AccessLogTest {
     fun `게이트웨이가 거절한 요청도 접근 로그에 남는다`(output: CapturedOutput) {
         val requestId = requestIdOf("/user/ping", token = null)
 
-        val line = jsonLines(output).single { it.path("requestId").asText() == requestId && it.has("status") }
+        val line = awaitLine(output) { it.path("requestId").asText() == requestId && it.has("status") }
         assertThat(line.path("status").asInt()).isEqualTo(401)
     }
 
@@ -63,7 +67,7 @@ class AccessLogTest {
     fun `라우트 처리 중 남긴 로그에도 MDC가 이어진다`(output: CapturedOutput) {
         val requestId = requestIdOf("/sp/ping", token("7"))
 
-        val fallbackLog = jsonLines(output).single { it.path("logger_name").asText().endsWith("FallbackController") }
+        val fallbackLog = awaitLine(output) { it.path("logger_name").asText().endsWith("FallbackController") }
         assertThat(fallbackLog.path("requestId").asText()).isEqualTo(requestId)
         assertThat(fallbackLog.path("userId").asText()).isEqualTo("7")
     }
@@ -80,6 +84,19 @@ class AccessLogTest {
             .returnResult(String::class.java)
             .responseHeaders
             .getFirst("X-Request-Id")!!
+
+    // 접근 로그는 응답을 보낸 뒤 doFinally에서 남으므로, 나타날 때까지 잠시 기다립니다.
+    private fun awaitLine(
+        output: CapturedOutput,
+        predicate: (JsonNode) -> Boolean,
+    ): JsonNode {
+        val deadline = System.nanoTime() + Duration.ofSeconds(2).toNanos()
+        while (true) {
+            jsonLines(output).singleOrNull(predicate)?.let { return it }
+            if (System.nanoTime() > deadline) return jsonLines(output).single(predicate)
+            Thread.sleep(20)
+        }
+    }
 
     private fun jsonLines(output: CapturedOutput): List<JsonNode> =
         output.out
