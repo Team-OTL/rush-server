@@ -1,5 +1,7 @@
 server:
   port: 8080
+  # 이보다 큰 요청 헤더는 Netty가 431로 거부합니다.
+  max-http-request-header-size: 8KB
 
 spring:
   application:
@@ -18,6 +20,11 @@ spring:
         webflux:
           httpclient:
             connect-timeout: 3000
+          # X-Forwarded-*는 RequestSanitizeFilter만 씁니다. SCG가 값을 덧붙이지 않도록 끕니다.
+          x-forwarded:
+            enabled: false
+          forwarded:
+            enabled: false
           routes:
             # ---- Spring 서비스: Eureka에서 찾아갑니다 (lb://서비스이름) ----
             - id: rush-auth
