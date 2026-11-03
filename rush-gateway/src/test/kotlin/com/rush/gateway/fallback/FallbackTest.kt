@@ -75,6 +75,31 @@ class FallbackTest {
     }
 
     @Test
+    fun `서비스가 5xx를 돌려주면 502 fallback 응답을 준다`() {
+        client
+            .get()
+            .uri("/user/error-500")
+            .header("Authorization", "Bearer ${token()}")
+            .exchange()
+            .expectStatus()
+            .isEqualTo(HttpStatus.BAD_GATEWAY)
+            .expectBody()
+            .jsonPath("$.code")
+            .isEqualTo("BAD_GATEWAY")
+    }
+
+    @Test
+    fun `서비스의 4xx는 실패로 보지 않고 그대로 전달한다`() {
+        client
+            .get()
+            .uri("/user/not-found")
+            .header("Authorization", "Bearer ${token()}")
+            .exchange()
+            .expectStatus()
+            .isNotFound
+    }
+
+    @Test
     fun `타임아웃보다 빠른 느린 응답은 그대로 전달한다`() {
         client
             .get()
@@ -92,6 +117,13 @@ class FallbackTest {
             HttpServer.create(InetSocketAddress("localhost", 0), 0).apply {
                 executor = Executors.newCachedThreadPool()
                 createContext("/") { exchange ->
+                    val path = exchange.requestURI.path
+                    if (path.endsWith("error-500") || path.endsWith("not-found")) {
+                        val status = if (path.endsWith("error-500")) 500 else 404
+                        exchange.sendResponseHeaders(status, -1)
+                        exchange.close()
+                        return@createContext
+                    }
                     val delay = if (exchange.requestURI.path.endsWith("very-slow")) 4L else 2L
                     Thread.sleep(Duration.ofSeconds(delay))
                     val body = "slow-ok".toByteArray()
