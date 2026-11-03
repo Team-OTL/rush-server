@@ -30,6 +30,15 @@ WebSocket을 제외한 라우트는 서킷브레이커를 거칩니다. 서비�
 - 클라이언트 IP는 연결 IP로 판별합니다. 연결 IP가 `TRUSTED_PROXIES`에 속할 때만 `X-Forwarded-For`를 읽으므로, 헤더를 위조해도 IP 제한을 우회할 수 없습니다.
 - docker compose로 띄우면 호스트에서 보낸 요청은 도커 브리지 IP로 들어옵니다. 호스트에서 관리용 엔드포인트를 보려면 `GATEWAY_ADMIN_ALLOWED_IPS`에 그 대역을 추가하세요.
 
+## 요청 정화
+
+`RequestSanitizeFilter`가 요청을 서비스로 넘기기 전에 정리합니다.
+
+- 경로 조작(`..`, `%2e`, `%2f`, `%5c`, `//`, `\`)이 있거나 헤더에 제어문자가 있으면 `400`을 돌려줍니다. 8KB를 넘는 헤더는 `431`입니다.
+- 클라이언트가 보낸 `X-User-Id`, `X-Real-IP`, `X-Forwarded-*`, `Forwarded`, `X-Internal-*`는 지웁니다. 그 뒤 `X-Real-IP`, `X-Forwarded-For`, `-Proto`, `-Host`, `-Port`를 게이트웨이가 판별한 값으로 다시 씁니다.
+- WebSocket용 `?token=`은 검증이 끝나면 지우고 서비스로 넘깁니다.
+- 각 서비스의 `/{prefix}/v3/api-docs`는 토큰 없이 접근할 수 있습니다.
+
 | 환경변수 | 기본값 | 설명 |
 |---|---|---|
 | `GATEWAY_ADMIN_ALLOWED_IPS` | `127.0.0.1/32,::1/128` | 관리용 actuator 허용 대역 |

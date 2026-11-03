@@ -11,6 +11,7 @@ data class ErrorResponse(
 
         private fun messageOf(status: HttpStatus) =
             when (status) {
+                HttpStatus.BAD_REQUEST -> "잘못된 요청입니다."
                 HttpStatus.UNAUTHORIZED -> "인증이 필요합니다."
                 HttpStatus.FORBIDDEN -> "접근 권한이 없습니다."
                 HttpStatus.NOT_FOUND -> "요청한 경로를 찾을 수 없습니다."
