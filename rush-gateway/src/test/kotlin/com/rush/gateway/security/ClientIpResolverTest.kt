@@ -48,6 +48,13 @@ class ClientIpResolverTest {
     }
 
     @Test
+    fun `범위를 벗어난 IPv4를 만나면 그 직전 IP에서 멈춘다`() {
+        val resolver = ClientIpResolver(GatewayProperties(trustedProxies = listOf("10.0.0.0/8")))
+
+        assertEquals("10.0.0.5", resolver.resolve(request("10.0.0.5", "999.999.999.999")))
+    }
+
+    @Test
     fun `IPv6 연결 주소의 scope id는 떼어 낸다`() {
         val resolver = ClientIpResolver(GatewayProperties())
         val loopback = Inet6Address.getByAddress(null, InetAddress.getByName("::1").address, 1)
