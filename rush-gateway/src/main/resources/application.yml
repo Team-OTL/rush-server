@@ -7,6 +7,9 @@ spring:
   config:
     import: optional:configserver:${CONFIG_URL:http://localhost:8888}
   cloud:
+    loadbalancer:
+      cache:
+        ttl: 5s
     gateway:
       server:
         webflux:
